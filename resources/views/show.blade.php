@@ -13,7 +13,7 @@
                     Log info :
 
                     <div class="group-btns pull-right">
-                        <a href="{{ route('log-viewer::logs.download', [$log->date]) }}" class="btn btn-xs btn-success">
+                        <a href="{{ route('log-viewer::logs.download', [ str_replace('/','_',$log->date)]) }}" class="btn btn-xs btn-success">
                             <i class="fa fa-download"></i> DOWNLOAD
                         </a>
                         <a href="#delete-log-modal" class="btn btn-xs btn-danger" data-toggle="modal">

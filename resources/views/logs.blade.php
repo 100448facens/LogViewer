@@ -1,6 +1,25 @@
 @extends('log-viewer::_template.master')
 
 @section('content')
+
+    <div class="alert alert-info text-center">
+        <form class="form-inline">
+            <label for="filename">File Name</label>
+            <div class="form-group">
+                <input type="text" class="form-control" id="filename" name="filename" value="{{old('filename')}}" placeholder="File Name">
+            </div>
+            <label for="date_ini">Date Start</label>
+            <div class="form-group">
+                <input type="date" class="form-control" id="date_ini" name="date_ini" value="{{old('date_ini')}}" placeholder="">
+            </div>
+            <label for="date_end">Date End</label>
+            <div class="form-group">
+                <input type="date" class="form-control" id="date_end" name="date_end" value="{{old('date_end')}}" placeholder="">
+            </div>
+            <button type="submit" class="btn btn-default">Search</button>
+        </form>
+    </div>
+
     <h1 class="page-header">Logs</h1>
 
     {!! $rows->render() !!}
@@ -38,10 +57,10 @@
                         </td>
                     @endforeach
                     <td class="text-right">
-                        <a href="{{ route('log-viewer::logs.show', [$date]) }}" class="btn btn-xs btn-info">
+                        <a href="{{ route('log-viewer::logs.show', [str_replace('/', '_', $date)]) }}" class="btn btn-xs btn-info">
                             <i class="fa fa-search"></i>
                         </a>
-                        <a href="{{ route('log-viewer::logs.download', [$date]) }}" class="btn btn-xs btn-success">
+                        <a href="{{ route('log-viewer::logs.download', [str_replace('/', '_', $date)]) }}" class="btn btn-xs btn-success">
                             <i class="fa fa-download"></i>
                         </a>
                         <a href="#delete-log-modal" class="btn btn-xs btn-danger" data-log-date="{{ $date }}">

@@ -98,7 +98,8 @@ class LogMenu implements LogMenuInterface
 
         foreach($log->tree($trans) as $level => $item) {
             $items[$level] = array_merge($item, [
-                'url'  => route($route, [$log->date, $level]),
+                //'url'  => route($route, [$log->date, $level]),
+                'url'  => route($route, [str_replace('/','_',$log->date), $level]),
                 'icon' => $this->isIconsEnabled() ? $this->styler->icon($level) : '',
             ]);
         }

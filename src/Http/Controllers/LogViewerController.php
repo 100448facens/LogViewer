@@ -43,8 +43,8 @@ class LogViewerController extends Controller
      */
     public function index()
     {
-        $stats    = $this->logViewer->statsTable();
-        $reports  = $stats->totalsJson();
+        $stats = $this->logViewer->statsTable();
+        $reports = $stats->totalsJson();
         $percents = $this->calcPercentages($stats->footer(), $stats->header());
 
         return $this->view('dashboard', compact('reports', 'percents'));
@@ -52,17 +52,46 @@ class LogViewerController extends Controller
 
     public function listLogs()
     {
-        $stats   = $this->logViewer->statsTable();
+        $stats = $this->logViewer->statsTable();
 
         $headers = $stats->header();
-        // $footer   = $stats->footer();
+        $footer = $stats->footer();
 
-        $page    = request('page', 1);
-        $offset  = ($page * $this->perPage) - $this->perPage;
+        $page = request('page', 1);
+        $offset = ($page * $this->perPage) - $this->perPage;
 
-        $rows    = new LengthAwarePaginator(
-            array_slice($stats->rows(), $offset, $this->perPage, true),
-            count($stats->rows()),
+        $filename = \Input::get('filename');
+        $date_ini = \Input::get('date_ini');
+        $date_end = \Input::get('date_end');
+
+        if ($date_ini) $date_ini = new \DateTime($date_ini);
+        if ($date_end) $date_end = new \DateTime($date_end);
+
+        $aux = $stats->rows();
+        foreach ($aux as $k => $row) {
+
+            $date = extract_date($row['date']);
+            $dat = new \DateTime($date);
+
+            if ($date_ini) {
+                if ($date_ini->getTimestamp() > $dat->getTimestamp()) {
+                    unset($aux[$k]);
+                }
+            }
+            if ($date_end) {
+                if ($date_end->getTimestamp() < $dat->getTimestamp()) {
+                    unset($aux[$k]);
+                }
+            }
+
+            if(!preg_match('/'.$filename.'/',$row['date'])){
+                unset($aux[$k]);
+            }
+        }
+
+        $rows = new LengthAwarePaginator(
+            array_slice($aux, $offset, $this->perPage, true),
+            count($aux),
             $this->perPage,
             $page
         );
@@ -75,14 +104,14 @@ class LogViewerController extends Controller
     /**
      * Show the log.
      *
-     * @param  string  $date
+     * @param  string $date
      *
      * @return \Illuminate\View\View
      */
     public function show($date)
     {
-        $log     = $this->getLogOrFail($date);
-        $levels  = $this->logViewer->levelsNames();
+        $log = $this->getLogOrFail(str_replace('_', '/', $date));
+        $levels = $this->logViewer->levelsNames();
         $entries = $log->entries()->paginate($this->perPage);
 
         return $this->view('show', compact('log', 'levels', 'entries'));
@@ -91,22 +120,23 @@ class LogViewerController extends Controller
     /**
      * Filter the log entries by level.
      *
-     * @param  string  $date
-     * @param  string  $level
+     * @param  string $date
+     * @param  string $level
      *
      * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function showByLevel($date, $level)
     {
-        $log = $this->getLogOrFail($date);
+        $date_c = str_replace('_', '/', $date);
+        $log = $this->getLogOrFail($date_c);
 
         if ($level == 'all') {
             return redirect()->route('log-viewer::logs.show', [$date]);
         }
 
-        $levels  = $this->logViewer->levelsNames();
+        $levels = $this->logViewer->levelsNames();
         $entries = $this->logViewer
-            ->entries($date, $level)
+            ->entries($date_c, $level)
             ->paginate($this->perPage);
 
         return $this->view('show', compact('log', 'levels', 'entries'));
@@ -115,13 +145,15 @@ class LogViewerController extends Controller
     /**
      * Download the log
      *
-     * @param  string  $date
+     * @param  string $date
      *
      * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function download($date)
     {
-        return $this->logViewer->download($date);
+        /*** José 2015/12/16 ***/
+        $date = str_replace('_', '/', $date);
+        return $this->logViewer->download($date, basename($date));
     }
 
     /**
@@ -131,7 +163,7 @@ class LogViewerController extends Controller
      */
     public function delete()
     {
-        if ( ! request()->ajax()) abort(405, 'Method Not Allowed');
+        if (!request()->ajax()) abort(405, 'Method Not Allowed');
 
         $date = request()->get('date');
         $ajax = [
@@ -148,7 +180,7 @@ class LogViewerController extends Controller
     /**
      * Get a log or fail
      *
-     * @param  string  $date
+     * @param  string $date
      *
      * @return Log|null
      */
@@ -156,8 +188,7 @@ class LogViewerController extends Controller
     {
         try {
             return $this->logViewer->get($date);
-        }
-        catch(LogNotFound $e) {
+        } catch (LogNotFound $e) {
             return abort(404, $e->getMessage());
         }
     }
@@ -165,20 +196,20 @@ class LogViewerController extends Controller
     /**
      * Calculate the percentage
      *
-     * @param  array  $total
-     * @param  array  $names
+     * @param  array $total
+     * @param  array $names
      *
      * @return array
      */
     private function calcPercentages(array $total, array $names)
     {
         $percents = [];
-        $all      = array_get($total, 'all');
+        $all = array_get($total, 'all');
 
         foreach ($total as $level => $count) {
             $percents[$level] = [
-                'name'    => $names[$level],
-                'count'   => $count,
+                'name' => $names[$level],
+                'count' => $count,
                 'percent' => round(($count / $all) * 100, 2),
             ];
         }
