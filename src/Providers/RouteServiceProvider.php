@@ -1,7 +1,7 @@
 <?php namespace Arcanedev\LogViewer\Providers;
 
 use Arcanedev\Support\Providers\RouteServiceProvider as ServiceProvider;
-use Illuminate\Routing\Router;
+use \Illuminate\Contracts\Routing\Registrar as Router;
 
 /**
  * Class     RouteServiceProvider
