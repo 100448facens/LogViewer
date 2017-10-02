@@ -8,7 +8,7 @@ use Arcanedev\Support\PackageServiceProvider as ServiceProvider;
  * @package  Arcanedev\LogViewer
  * @author   ARCANEDEV <arcanedev.maroc@gmail.com>
  */
-class LogViewerServiceProvider extends ServiceProvider
+protected class LogViewerServiceProvider extends ServiceProvider
 {
     /* ------------------------------------------------------------------------------------------------
      |  Properties
